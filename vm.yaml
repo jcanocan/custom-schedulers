@@ -1,0 +1,53 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  labels:
+    kubevirt.io/vm: fedora-vm-1
+  name: fedora-1
+spec:
+  running: false
+  template:
+    metadata:
+      labels:
+        kubevirt.io/domain: fedora-1
+        kubevirt.io/vm: fedora-1
+      annotations:
+        descheduler.alpha.kubernetes.io/evict: "true"
+    spec:
+      schedulerName: my-scheduler
+      domain:
+        cpu:
+          cores: 1
+          sockets: 1
+          threads: 1
+        devices:
+          disks:
+            - name: containerdisk
+              disk:
+                bus: virtio
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+          interfaces:
+            - name: default
+              masquerade: {}
+          rng: {}
+        resources:
+          requests:
+            memory: 1Gi
+      networks:
+        - name: default
+          pod: {}
+      terminationGracePeriodSeconds: 180
+      volumes:
+        - containerDisk:
+            image: quay.io/containerdisks/fedora:36
+          name: containerdisk
+        - cloudInitNoCloud:
+            userData: |-
+              #cloud-config
+              chpasswd:
+                expire: false
+              password: password
+              user: fedora
+          name: cloudinitdisk
